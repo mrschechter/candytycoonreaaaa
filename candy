@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candy Tycoon</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        button { margin: 5px; padding: 10px; }
+        #status, #inventory, #actions { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Candy Tycoon</h1>
+    <div id="status"></div>
+    <div id="inventory"></div>
+    <div id="actions">
+        <button onclick="performAction('buy')">Buy Candy</button>
+        <button onclick="performAction('sell')">Sell Candy</button>
+        <button onclick="performAction('travel')">Travel</button>
+        <button onclick="performAction('next')">Next Day</button>
+    </div>
+
+    <script>
+        class CandyTycoon {
+            constructor() {
+                this.candies = {
+                    "Chocolate Bar": { basePrice: 2, quantity: 0 },
+                    "Gummy Bears": { basePrice: 3, quantity: 0 },
+                    "Lollipop": { basePrice: 1, quantity: 0 },
+                    "Licorice": { basePrice: 2, quantity: 0 },
+                    "Sour Patch Kids": { basePrice: 3, quantity: 0 }
+                };
+                this.locations = {
+                    "Downtown": { demand: 1.2, supply: 0.8 },
+                    "Suburb": { demand: 0.9, supply: 1.1 },
+                    "Beach": { demand: 1.5, supply: 0.7 },
+                    "Mall": { demand: 1.1, supply: 1.0 }
+                };
+                this.currentLocation = "Downtown";
+                this.money = 100;
+                this.days = 30;
+                this.currentDay = 1;
+                this.currentSeason = "Spring";
+            }
+
+            getPrice(candy) {
+                const basePrice = this.candies[candy].basePrice;
+                const locationFactor = this.locations[this.currentLocation].demand;
+                const seasonFactor = 1 + (0.2 * (this.getSeasonalCandies().includes(candy) ? 1 : 0));
+                return Math.round(basePrice * locationFactor * seasonFactor * 100) / 100;
+            }
+
+            getSeasonalCandies() {
+                const seasonalCandies = {
+                    "Spring": ["Chocolate Bunny", "Jelly Beans"],
+                    "Summer": ["Ice Cream", "Popsicle"],
+                    "Fall": ["Candy Corn", "Caramel Apple"],
+                    "Winter": ["Candy Cane", "Hot Chocolate"]
+                };
+                return seasonalCandies[this.currentSeason];
+            }
+
+            buy() {
+                const candy = prompt("Which candy do you want to buy?");
+                if (!this.candies[candy]) {
+                    alert("Invalid candy type!");
+                    return;
+                }
+                const quantity = parseInt(prompt("How many do you want to buy?"));
+                const totalCost = this.getPrice(candy) * quantity;
+                if (totalCost > this.money) {
+                    alert("Not enough money!");
+                    return;
+                }
+                this.money -= totalCost;
+                this.candies[candy].quantity += quantity;
+                alert(`Bought ${quantity} ${candy} for $${totalCost.toFixed(2)}`);
+            }
+
+            sell() {
+                const candy = prompt("Which candy do you want to sell?");
+                if (!this.candies[candy]) {
+                    alert("Invalid candy type!");
+                    return;
+                }
+                const quantity = parseInt(prompt("How many do you want to sell?"));
+                if (quantity > this.candies[candy].quantity) {
+                    alert("Not enough in stock!");
+                    return;
+                }
+                const totalEarned = this.getPrice(candy) * quantity;
+                this.money += totalEarned;
+                this.candies[candy].quantity -= quantity;
+                alert(`Sold ${quantity} ${candy} for $${totalEarned.toFixed(2)}`);
+            }
+
+            travel() {
+                const newLocation = prompt("Where do you want to travel? (Downtown, Suburb, Beach, Mall)");
+                if (!this.locations[newLocation]) {
+                    alert("Invalid location!");
+                    return;
+                }
+                this.currentLocation = newLocation;
+                alert(`Traveled to ${newLocation}`);
+            }
+
+            nextDay() {
+                this.currentDay++;
+                if (this.currentDay % 7 === 0) {
+                    const seasons = ["Spring", "Summer", "Fall", "Winter"];
+                    this.currentSeason = seasons[(seasons.indexOf(this.currentSeason) + 1) % 4];
+                }
+                if (this.currentDay > this.days) {
+                    alert(`Game Over! You finished with $${this.money.toFixed(2)}`);
+                    return false;
+                }
+                return true;
+            }
+        }
+
+        const game = new CandyTycoon();
+
+        function updateDisplay() {
+            document.getElementById('status').innerHTML = `
+                <p>Day: ${game.currentDay}/${game.days}</p>
+                <p>Money: $${game.money.toFixed(2)}</p>
+                <p>Location: ${game.currentLocation}</p>
+                <p>Season: ${game.currentSeason}</p>
+            `;
+
+            let inventoryHtml = '<h2>Inventory:</h2>';
+            for (const [candy, info] of Object.entries(game.candies)) {
+                inventoryHtml += `<p>${candy}: ${info.quantity} (Price: $${game.getPrice(candy).toFixed(2)})</p>`;
+            }
+            document.getElementById('inventory').innerHTML = inventoryHtml;
+        }
+
+        function performAction(action) {
+            switch(action) {
+                case 'buy':
+                    game.buy();
+                    break;
+                case 'sell':
+                    game.sell();
+                    break;
+                case 'travel':
+                    game.travel();
+                    break;
+                case 'next':
+                    if (!game.nextDay()) {
+                        document.getElementById('actions').style.display = 'none';
+                    }
+                    break;
+            }
+            updateDisplay();
+        }
+
+        updateDisplay();
+    </script>
+</body>
+</html>
